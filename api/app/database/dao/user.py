@@ -8,7 +8,7 @@ class User(Base):
 
     @staticmethod
     def create_user(first_name: str, last_name: str, email: str, password: str,
-                    email_verified: Optional[str] = None) -> None:
+                    email_verified: Optional[bool] = None) -> None:
         User.insert(UserModel(
             first_name=first_name,
             last_name=last_name,
