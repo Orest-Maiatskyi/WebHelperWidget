@@ -75,14 +75,16 @@ def arg_parser(request_args: Dict[str, str]):
         @wraps(func)
         def wrapper(*args, **kwargs):
             """
-            Wrapper function that validates request arguments.
+            Wrapper function that validates request arguments and passes validated arguments to the original function.
 
             :return: JSON response with an error if validation fails, or the result of the original function.
             """
+            validated_args = {}
             for arg, regex in request_args.items():
                 if request.args.get(arg) is None or not re.compile(regex, re.UNICODE).fullmatch(request.args.get(arg)):
                     return jsonify({'error': 'Bad Request',
                                     'message': f'Missing or incorrect required argument: {arg}'}), 400
-            return func(*args, **kwargs)
+                validated_args[arg] = request.args.get(arg)
+            return func(*args, **kwargs, **validated_args)
         return wrapper
     return decorator
