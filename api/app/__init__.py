@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, Blueprint
 
 from app.config import current_config
 from app.ext import *
@@ -20,6 +20,20 @@ with app.app_context():
                             bcrypt.generate_password_hash('12345JonDon!'), True)
         app.logger.info('The application was launched in DEBUG mode, all DB columns were dropped!')
     db.create_all()
+
+
+from app.apis import *
+
+
+api_bp = Blueprint('api', __name__)
+api_bp.register_blueprint(auth_bp, url_prefix='/auth')
+app.register_blueprint(api_bp, url_prefix='/api/v1')
+
+
+# Callback function to check if a JWT exists in the redis blocklist
+@jwt.token_in_blocklist_loader
+def check_if_token_is_revoked(jwt_header, jwt_payload: dict):
+    return redis_client.get(jwt_payload["jti"]) is not None
 
 
 @app.errorhandler(DAOException)
