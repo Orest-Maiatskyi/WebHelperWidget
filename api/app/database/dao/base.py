@@ -113,6 +113,22 @@ class Base(ABC):
 
     @staticmethod
     @dao_error_handler
+    def update(model_obj_instance: DeclarativeMeta, update_data: dict) -> None:
+        """
+        Updates the fields of a SQLAlchemy model instance based on the provided dictionary
+        and commits the changes to the database.
+
+        :param model_obj_instance: The instance of the SQLAlchemy model to be updated.
+        :param update_data: A dictionary containing the fields to update and their new values.
+        :return: None
+        """
+        for key, value in update_data.items():
+            if hasattr(model_obj_instance, key):
+                setattr(model_obj_instance, key, value)
+        Base.commit()
+
+    @staticmethod
+    @dao_error_handler
     def delete(model_obj_instance: DeclarativeMeta) -> None:
         """
         Deletes a model instance from the database.
