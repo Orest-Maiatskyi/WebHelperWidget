@@ -16,6 +16,8 @@ with app.app_context():
     if app.config.get('DEBUG'):
         db.drop_all()
         db.create_all()
+        UserDAO.create_user('Jon', 'Don', 'jon_don@gamil.com',
+                            bcrypt.generate_password_hash('12345JonDon!'), True)
         app.logger.info('The application was launched in DEBUG mode, all DB columns were dropped!')
     db.create_all()
 
