@@ -83,7 +83,8 @@ class Auth(View):
 
         :return: JSON response with the revocation message and HTTP status code
         """
-        redis_client.set(get_jwt()["jti"], f'{get_jwt()["type"]} revoked', ex=app.config.get('JWT_ACCESS_TOKEN_EXPIRES'))
+        redis_client.set(get_jwt()["jti"], f'{get_jwt()["type"]} revoked',
+                         ex=app.config.get('JWT_ACCESS_TOKEN_EXPIRES'))
         return {'message': f'{get_jwt()['type'].capitalize()} token successfully revoked'}, 200
 
 
