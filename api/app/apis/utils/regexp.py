@@ -45,3 +45,13 @@ This regular expression matches a string that consists of between 3 and 50 chara
 Cyrillic letters (including Russian and Ukrainian), and the Russian "ё" in both cases. The string cannot contain 
 spaces, punctuation, or other symbols.
 """
+
+math_captcha_answer_regexp = '^(?:[1-9][0-9]{0,2}|1000)$'
+"""
+This regular expression for matching numbers that are greater than 0 but less than or equal to 1000:
+"""
+
+removal_reason_regexp = '^.{10,255}$'
+"""
+This regular expression for a string to be at least 10 characters and at most 255 characters.
+"""
