@@ -1,6 +1,8 @@
+import random
+
 import regex as re
 from functools import wraps
-from typing import Callable, Dict
+from typing import Callable, Dict, Optional
 
 from flask import request, jsonify
 from werkzeug.exceptions import MethodNotAllowed
@@ -69,8 +71,14 @@ class View:
         return view
 
 
-# Decorator for smart request argument parsing and validation using regular expressions.
-def arg_parser(request_args: Dict[str, str]):
+def arg_parser(required_args: Optional[Dict[str, str]] = None, optional_args: Optional[Dict[str, str]] = None):
+    """
+    Decorator for smart request argument parsing and validation using regular expressions.
+
+    :param required_args: A dictionary of required argument names and their regex patterns.
+    :param optional_args: A dictionary of optional argument names and their regex patterns.
+    :return: A decorator function.
+    """
     def decorator(func: Callable):
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -80,11 +88,66 @@ def arg_parser(request_args: Dict[str, str]):
             :return: JSON response with an error if validation fails, or the result of the original function.
             """
             validated_args = {}
-            for arg, regex in request_args.items():
-                if request.args.get(arg) is None or not re.compile(regex, re.UNICODE).fullmatch(request.args.get(arg)):
-                    return jsonify({'error': 'Bad Request',
-                                    'message': f'Missing or incorrect required argument: {arg}'}), 400
-                validated_args[arg] = request.args.get(arg)
+
+            if required_args:
+                for arg, regex in required_args.items():
+                    if request.args.get(arg) is None or not re.compile(regex, re.UNICODE).fullmatch(
+                            request.args.get(arg)):
+                        return jsonify({'error': 'Bad Request',
+                                        'message': f'Missing or incorrect required argument: {arg}'}), 400
+                    validated_args[arg] = request.args.get(arg)
+
+            if optional_args:
+                for arg, regex in optional_args.items():
+                    if request.args.get(arg) is not None and not re.compile(regex, re.UNICODE).fullmatch(
+                            request.args.get(arg)):
+                        return jsonify({'error': 'Bad Request',
+                                        'message': f'Incorrect optional argument: {arg}'}), 400
+                    validated_args[arg] = request.args.get(arg)
+
             return func(*args, **kwargs, **validated_args)
+
         return wrapper
+
     return decorator
+
+
+def generate_math_problem():
+    """
+    Generates a random mathematical problem involving two numbers and a random operation (+, -, *, /).
+    Ensures the result is an integer within the range of 1 to 1000.
+
+    Returns:
+        tuple:
+            - problem (str): A string representation of the math problem (e.g., "12 + 345").
+            - result (int): The correct answer to the problem.
+
+    Logic:
+        - Two random integers are generated between 1 and 1000.
+        - A random operation is selected from +, -, *, /.
+        - For division (/), ensures the divisor is not zero and the result is an integer.
+        - Filters out problems where the result is outside the range [1, 1000].
+    """
+    while True:
+        num1 = random.randint(1, 1000)
+        num2 = random.randint(1, 1000)
+
+        operation = random.choice(['+', '-', '*', '/'])
+
+        result = None
+
+        if operation == '+':
+            result = num1 + num2
+        elif operation == '-':
+            result = num1 - num2
+        elif operation == '*':
+            result = num1 * num2
+        elif operation == '/':
+            if num2 != 0 and num1 % num2 == 0:
+                result = num1 // num2
+            else:
+                continue
+
+        if 1 <= result <= 1000:
+            problem = f"{num1} {operation} {num2} = "
+            return problem, result
