@@ -27,6 +27,7 @@ from app.apis import *
 
 api_bp = Blueprint('api', __name__)
 api_bp.register_blueprint(auth_bp, url_prefix='/auth')
+api_bp.register_blueprint(account_bp, url_prefix='/account')
 app.register_blueprint(api_bp, url_prefix='/api/v1')
 
 
