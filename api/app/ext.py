@@ -1,6 +1,7 @@
 from flask_bcrypt import Bcrypt
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
+from flask_openai import OpenAI
 from flask_redis import FlaskRedis
 from flask_sqlalchemy import SQLAlchemy
 
@@ -10,6 +11,7 @@ db = SQLAlchemy()
 redis_client = FlaskRedis()
 bcrypt = Bcrypt()
 jwt = JWTManager()
+openai = OpenAI()
 
 
 def init_ext(api):
@@ -21,3 +23,4 @@ def init_ext(api):
     redis_client.ping()
     bcrypt.init_app(api)
     jwt.init_app(api)
+    openai.init_app(api)
