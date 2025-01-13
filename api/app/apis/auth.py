@@ -85,7 +85,7 @@ class Auth(View):
         """
         redis_client.set(get_jwt()["jti"], f'{get_jwt()["type"]} revoked',
                          ex=app.config.get('JWT_ACCESS_TOKEN_EXPIRES'))
-        return {'message': f'{get_jwt()['type'].capitalize()} token successfully revoked'}, 200
+        return {'message': f'{get_jwt()["type"].capitalize()} token successfully revoked'}, 200
 
 
 auth_bp.add_url_rule('/', view_func=Auth.as_view('auth'))
