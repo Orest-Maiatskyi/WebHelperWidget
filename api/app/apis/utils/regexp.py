@@ -55,3 +55,8 @@ removal_reason_regexp = '^.{10,255}$'
 """
 This regular expression for a string to be at least 10 characters and at most 255 characters.
 """
+
+uuid4_regexp = '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$'
+"""
+This regular expression for a uuid4 string verification.
+"""
