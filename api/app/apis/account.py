@@ -88,21 +88,21 @@ class Account(View):
             """
             problem, result_ = generate_math_problem()
             redis_client.set(
-                f'account-{get_jwt().get('sub')}-removal-captcha-answer',
+                f'account-{get_jwt().get("sub")}-removal-captcha-answer',
                 str(result_), app.config.get('MATH_CAPTCHA_DURATION'))
             return {'math_captcha': problem, 'timestamp': str(int(time.time()))}, 202
 
         if captcha_answer is None:
             return set_captcha()
         else:
-            result = redis_client.get(f'account-{get_jwt().get('sub')}-removal-captcha-answer')
+            result = redis_client.get(f'account-{get_jwt().get("sub")}-removal-captcha-answer')
             if result is None or int(captcha_answer) != int(result):
                 return set_captcha()
 
         if removal_reason is None:
             return {'error': 'Bad Request', 'message': 'Incorrect optional argument: removal_reason'}, 400
 
-        redis_client.delete(f'account-{get_jwt().get('sub')}-removal-captcha-answer')
+        redis_client.delete(f'account-{get_jwt().get("sub")}-removal-captcha-answer')
 
         user = UserDAO.get_user_by_uuid(get_jwt().get('sub'))
         user.is_deleted = True
