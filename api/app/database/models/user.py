@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime, timezone
 
 from sqlalchemy import Integer, String, Boolean, DateTime
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app import db
 
@@ -23,3 +23,5 @@ class User(db.Model):
     is_blocked: Mapped[bool] = mapped_column(Boolean(), default=False, nullable=False)
     blocked_reason: Mapped[str | None] = mapped_column(String(255), nullable=True)
     blocked_until: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+    api_keys = relationship('ApiKey', back_populates='user', cascade='all, delete-orphan')
