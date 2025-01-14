@@ -1,13 +1,10 @@
 from datetime import datetime
-import time
 
 from flask import Blueprint
 from flask_jwt_extended import jwt_required, get_jwt
 
-from app.apis.utils import View, arg_parser, generate_math_problem, \
-                            email_regexp, name_regexp, math_captcha_answer_regexp, removal_reason_regexp
+from app.apis.utils import View, arg_parser, email_regexp, name_regexp, removal_reason_regexp, math_captcha
 from app.database import UserDAO
-from app import redis_client, app
 
 
 _get_patch_delete_type = tuple[dict[str, str], int]
@@ -65,44 +62,21 @@ class Account(View):
         return {'message': 'Account info updated!'}, 200
 
     @jwt_required(fresh=True)
+    @math_captcha()
     @arg_parser(optional_args={
-        'captcha_answer': math_captcha_answer_regexp,
         'removal_reason': removal_reason_regexp
     })
-    def delete(self, captcha_answer: str | None = None, removal_reason: str | None = None) -> _get_patch_delete_type:
+    def delete(self, removal_reason: str | None = None) -> _get_patch_delete_type:
         """
-        This endpoint first checks if a valid captcha answer is provided. If not, it generates
-        a new captcha for the user to answer. If the captcha answer is correct, and a removal
-        reason is provided, the user's account is marked as deleted in the database.
+        This endpoint allows to set user's account marked as deleted in the database.
 
-        :param captcha_answer: Optional string, the answer to the math captcha for account deletion.
         :param removal_reason: Optional string, the reason for account removal.
 
         :return: A dictionary indicating the result of the operation (either captcha generation or success message).
         """
-        def set_captcha():
-            """
-            Generates a new captcha for account deletion and stores the answer in Redis.
-
-            :return: A dictionary containing the math captcha and a timestamp.
-            """
-            problem, result_ = generate_math_problem()
-            redis_client.set(
-                f'account-{get_jwt().get("sub")}-removal-captcha-answer',
-                str(result_), app.config.get('MATH_CAPTCHA_DURATION'))
-            return {'math_captcha': problem, 'timestamp': str(int(time.time()))}, 202
-
-        if captcha_answer is None:
-            return set_captcha()
-        else:
-            result = redis_client.get(f'account-{get_jwt().get("sub")}-removal-captcha-answer')
-            if result is None or int(captcha_answer) != int(result):
-                return set_captcha()
 
         if removal_reason is None:
             return {'error': 'Bad Request', 'message': 'Incorrect optional argument: removal_reason'}, 400
-
-        redis_client.delete(f'account-{get_jwt().get("sub")}-removal-captcha-answer')
 
         user = UserDAO.get_user_by_uuid(get_jwt().get('sub'))
         user.is_deleted = True
