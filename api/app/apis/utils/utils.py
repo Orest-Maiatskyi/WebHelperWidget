@@ -1,11 +1,16 @@
 import random
+import time
 
 import regex as re
 from functools import wraps
 from typing import Callable, Dict, Optional
 
 from flask import request, jsonify
+from flask_jwt_extended import get_jwt
 from werkzeug.exceptions import MethodNotAllowed
+
+from app import redis_client, app
+from app.apis.utils import math_captcha_answer_regexp
 
 
 class View:
@@ -79,6 +84,7 @@ def arg_parser(required_args: Optional[Dict[str, str]] = None, optional_args: Op
     :param optional_args: A dictionary of optional argument names and their regex patterns.
     :return: A decorator function.
     """
+
     def decorator(func: Callable):
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -151,3 +157,37 @@ def generate_math_problem():
         if 1 <= result <= 1000:
             problem = f"{num1} {operation} {num2} = "
             return problem, result
+
+
+def math_captcha():
+    """
+    A decorator that enforces a math CAPTCHA as part of a request workflow.
+    It checks for the correctness of a provided CAPTCHA answer or generates
+    a new math problem if none is provided or if the answer is incorrect.
+    If route decorated with it, 'captcha_answer' arg should be in request!
+    """
+
+    def decorator(func: Callable):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            if request.args.get('captcha_answer'):
+
+                if not re.compile(math_captcha_answer_regexp, re.UNICODE).fullmatch(
+                        request.args.get('captcha_answer')):
+                    return {'error': 'Bad Request',
+                            'message': 'Missing or incorrect required argument: captcha_answer'}, 400
+
+                result = redis_client.get(f'account-{get_jwt().get("sub")}-removal-captcha-answer')
+                if result is not None and int(request.args.get('captcha_answer')) == int(result):
+                    redis_client.delete(f'account-{get_jwt().get("sub")}-removal-captcha-answer')
+                    return func(*args, **kwargs)
+
+            problem, result = generate_math_problem()
+            redis_client.set(
+                f'account-{get_jwt().get("sub")}-removal-captcha-answer',
+                str(result), app.config.get('MATH_CAPTCHA_DURATION'))
+            return {'math_captcha': problem, 'timestamp': str(int(time.time()))}, 202
+
+        return wrapper
+
+    return decorator
