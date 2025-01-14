@@ -28,6 +28,8 @@ from app.apis import *
 api_bp = Blueprint('api', __name__)
 api_bp.register_blueprint(auth_bp, url_prefix='/auth')
 api_bp.register_blueprint(account_bp, url_prefix='/account')
+api_bp.register_blueprint(api_key_bp, url_prefix='/account/api_key')
+api_bp.register_blueprint(fine_tuning_bp, url_prefix='/account/fine_tuning')
 app.register_blueprint(api_bp, url_prefix='/api/v1')
 
 
