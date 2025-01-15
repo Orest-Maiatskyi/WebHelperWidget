@@ -1,7 +1,8 @@
 from datetime import datetime
 
+from app import db
 from app.database.dao.base import Base
-from app.database.models import ApiKeyModel
+from app.database.models import ApiKeyModel, FineTuningModel
 
 
 class ApiKey(Base):
@@ -10,14 +11,19 @@ class ApiKey(Base):
     def create_api_key(user_uuid: str, key: str | None = None, name: str | None = None,
                        domains: dict | None = None, is_deleted: bool | None = None,
                        deleted_at: datetime | None = None) -> None:
-        ApiKey.insert(ApiKeyModel(
-            key=key,
-            name=name,
-            domains=domains,
-            is_deleted=is_deleted,
-            deleted_at=deleted_at,
-            user_uuid=user_uuid
-        ))
+        def transaction():
+            api_key = ApiKeyModel(
+                key=key,
+                name=name,
+                domains=domains,
+                is_deleted=is_deleted,
+                deleted_at=deleted_at,
+                user_uuid=user_uuid)
+            db.session.add(api_key)
+            db.session.flush()
+            fine_tuning = FineTuningModel(api_key_uuid=api_key.uuid)
+            db.session.add(fine_tuning)
+        ApiKey.transaction(transaction)
 
     @staticmethod
     def get_api_key_by_id(_id: int | str) -> ApiKeyModel | None:
