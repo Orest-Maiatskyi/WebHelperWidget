@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import Optional, List, Any, Type
+from typing import Optional, List, Any, Type, Callable
 
 from sqlalchemy import Select
 from sqlalchemy.orm import DeclarativeMeta, Query
@@ -137,3 +137,15 @@ class Base(ABC):
         """
         db.session.delete(model_obj_instance)
         db.session.commit()
+
+    @staticmethod
+    @dao_error_handler
+    def transaction(func: Callable) -> Any:
+        """
+        Run func wrapped with transaction block.
+
+        :param func: Function that contains all db actions that need to be in one transaction.
+        :return: return the same result that should be in func.
+        """
+        with db.session.begin():
+            return func()
