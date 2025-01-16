@@ -77,3 +77,8 @@ This regular expression that matches a string containing domains separated by co
     example,com,example.org            ❌ No
     example.com,,example.org           ❌ No
 """
+
+openai_file_id_regexp = r'^file-[a-zA-Z0-9]{22}$'
+"""
+This regular expression that matches a openai file id.
+"""
