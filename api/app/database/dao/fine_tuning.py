@@ -26,3 +26,7 @@ class FineTuning(Base):
     @staticmethod
     def get_fine_tuning_by_uuid(uuid: str) -> FineTuningModel | None:
         return FineTuning.scalar_query(FineTuningModel.query.where(FineTuningModel.uuid == uuid))
+
+    @staticmethod
+    def get_fine_tuning_by_api_key_uuid(api_key_uuid: str) -> FineTuningModel | None:
+        return FineTuning.scalar_query(FineTuningModel.query.where(FineTuningModel.api_key_uuid == api_key_uuid))
