@@ -18,6 +18,9 @@ with app.app_context():
         db.create_all()
         UserDAO.create_user('Jon', 'Don', 'jon_don@gamil.com',
                             bcrypt.generate_password_hash('12345JonDon!'), True)
+        user = UserDAO.get_user_by_email('jon_don@gamil.com')
+        db.session.close()
+        ApiKeyDAO.create_api_key(user.uuid)
         app.logger.info('The application was launched in DEBUG mode, all DB columns were dropped!')
     db.create_all()
 
@@ -30,6 +33,7 @@ api_bp.register_blueprint(auth_bp, url_prefix='/auth')
 api_bp.register_blueprint(account_bp, url_prefix='/account')
 api_bp.register_blueprint(api_key_bp, url_prefix='/account/api_key')
 api_bp.register_blueprint(fine_tuning_bp, url_prefix='/account/fine_tuning')
+api_bp.register_blueprint(training_file_bp, url_prefix='/account/fine_tuning/training_file')
 app.register_blueprint(api_bp, url_prefix='/api/v1')
 
 
