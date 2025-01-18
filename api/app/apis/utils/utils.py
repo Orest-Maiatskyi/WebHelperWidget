@@ -3,7 +3,7 @@ import time
 
 import regex as re
 from functools import wraps
-from typing import Callable, Dict, Optional
+from typing import Callable, Dict
 
 from flask import request, jsonify
 from flask_jwt_extended import get_jwt
@@ -76,12 +76,15 @@ class View:
         return view
 
 
-def arg_parser(required_args: Optional[Dict[str, str]] = None, optional_args: Optional[Dict[str, str]] = None):
+def arg_parser(required_args: Dict[str, str] | None = None,
+               optional_args: Dict[str, str] | None = None,
+               file_required: str | None = None) -> Callable:
     """
-    Decorator for smart request argument parsing and validation using regular expressions.
+    Decorator for smart request argument / file parsing and validation using regular expressions.
 
     :param required_args: A dictionary of required argument names and their regex patterns.
     :param optional_args: A dictionary of optional argument names and their regex patterns.
+    :param file_required: A string with required file extension (WITHOUT DOT)
     :return: A decorator function.
     """
 
@@ -110,6 +113,18 @@ def arg_parser(required_args: Optional[Dict[str, str]] = None, optional_args: Op
                         return jsonify({'error': 'Bad Request',
                                         'message': f'Incorrect optional argument: {arg}'}), 400
                     validated_args[arg] = request.args.get(arg)
+
+            if file_required:
+                if len(request.files) == 0:
+                    return jsonify({'error': 'Bad Request',
+                                    'message': f'File with type .{file_required} is required'}), 400
+                file = list(request.files.values())[0]
+                if file.filename == '':
+                    return jsonify({'error': 'Bad Request',
+                                    'message': f'File must contain name'}), 400
+                if file.filename.split('.')[-1].lower() != file_required:
+                    return {'error': 'Unsupported Media Type', 'message': 'Supported only .jsonl file type'}, 415
+                validated_args[f'{file_required}_file'] = file
 
             return func(*args, **kwargs, **validated_args)
 
