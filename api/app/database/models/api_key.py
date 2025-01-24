@@ -16,7 +16,7 @@ class ApiKey(db.Model, SerializableMixin):
                                      default=lambda: str(uuid.uuid4()).replace('-', ''))
     name: Mapped[str | None] = mapped_column(String(100), nullable=True)
     domains: Mapped[dict] = mapped_column(JSON, nullable=True)
-    registered_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(timezone.utc), nullable=False)
+    registered_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(timezone.utc).isoformat(), nullable=False)
     is_deleted: Mapped[bool] = mapped_column(Boolean(), default=False, nullable=False)
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
