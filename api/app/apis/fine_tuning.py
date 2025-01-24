@@ -1,7 +1,7 @@
 from flask import Blueprint
 from flask_jwt_extended import jwt_required
 
-from app.apis.utils import View, arg_parser, uuid4_regexp
+from app.apis.utils import View, arg_parser, uuid4_regexp, authenticator
 from app.database import FineTuningDAO
 
 
@@ -10,7 +10,7 @@ fine_tuning_bp = Blueprint('fine_tuning', __name__)
 
 class FineTuning(View):
 
-    @jwt_required()
+    @authenticator()
     @arg_parser({'api_key_uuid': uuid4_regexp})
     def get(self, api_key_uuid: str) -> tuple[dict[str, str], int]:
         """

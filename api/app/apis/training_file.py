@@ -5,14 +5,14 @@ from flask_jwt_extended import jwt_required
 from werkzeug.datastructures import FileStorage
 
 from app import openai
-from app.apis.utils import View, arg_parser, uuid4_regexp, JsonL, JsonLException
+from app.apis.utils import View, arg_parser, uuid4_regexp, JsonL, JsonLException, authenticator
 from app.database import FineTuningDAO
 
 training_file_bp = Blueprint('training_file', __name__)
 
 
 class TrainingFile(View):
-    @jwt_required()
+    @authenticator()
     @arg_parser({'api_key_uuid': uuid4_regexp})
     def get(self, api_key_uuid: str) -> tuple[dict, int] | Response:
         """
@@ -31,7 +31,7 @@ class TrainingFile(View):
         file = openai.client.files.content(file_id=fine_tuning.training_file_uuid).content
         return send_file(BytesIO(file), mimetype='application/jsonl')
 
-    @jwt_required()
+    @authenticator()
     @arg_parser({'api_key_uuid': uuid4_regexp}, file_required='jsonl')
     def post(self, api_key_uuid: str, jsonl_file: FileStorage):
         """
@@ -60,7 +60,7 @@ class TrainingFile(View):
         except Exception as ignore:
             return {'error': 'Internal Server Error', 'message': 'Unable to save training file.'}, 500
 
-    @jwt_required()
+    @authenticator()
     @arg_parser({'api_key_uuid': uuid4_regexp})
     def delete(self, api_key_uuid):
         """

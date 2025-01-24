@@ -3,7 +3,8 @@ from datetime import datetime
 from flask import Blueprint
 from flask_jwt_extended import jwt_required, get_jwt
 
-from app.apis.utils import View, arg_parser, email_regexp, name_regexp, removal_reason_regexp, math_captcha
+from app.apis.utils import View, arg_parser, email_regexp, name_regexp, removal_reason_regexp, math_captcha, \
+    authenticator
 from app.database import UserDAO
 
 
@@ -15,7 +16,7 @@ account_bp = Blueprint('account', __name__)
 
 class Account(View):
 
-    @jwt_required()
+    @authenticator()
     def get(self) -> _get_patch_delete_type:
         """
         This endpoint fetches the user data based on the JWT token and returns details such as
@@ -32,7 +33,7 @@ class Account(View):
                 'email': user.email,
                 'email_verified': user.email_verified}, 200
 
-    @jwt_required(fresh=True)
+    @authenticator(fresh=True)
     @arg_parser(optional_args={
         'first_name': name_regexp,
         'last_name': name_regexp,
@@ -61,7 +62,7 @@ class Account(View):
         UserDAO.commit()
         return {'message': 'Account info updated!'}, 200
 
-    @jwt_required(fresh=True)
+    @authenticator(fresh=True)
     @math_captcha()
     @arg_parser(optional_args={
         'removal_reason': removal_reason_regexp
@@ -81,7 +82,7 @@ class Account(View):
         user = UserDAO.get_user_by_uuid(get_jwt().get('sub'))
         user.is_deleted = True
         user.removal_reason = removal_reason
-        user.deleted_at = datetime.now()
+        user.deleted_at = datetime.now().isoformat()
         UserDAO.commit()
 
         return {'message': 'Account deleted successfully!'}, 200

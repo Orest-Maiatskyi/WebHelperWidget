@@ -3,7 +3,8 @@ from datetime import datetime
 from flask import Blueprint
 from flask_jwt_extended import jwt_required, get_jwt
 
-from app.apis.utils import View, arg_parser, uuid4_regexp, math_captcha, api_key_name_regexp, api_key_domains_regexp
+from app.apis.utils import View, arg_parser, uuid4_regexp, math_captcha, api_key_name_regexp, api_key_domains_regexp, \
+    authenticator
 from app.database import ApiKeyDAO
 
 api_key_bp = Blueprint('api_key', __name__)
@@ -11,7 +12,7 @@ api_key_bp = Blueprint('api_key', __name__)
 
 class ApiKey(View):
 
-    @jwt_required()
+    @authenticator()
     def get(self) -> tuple[dict, int]:
         """
         Handles GET requests to fetch all API keys (that are not deleted) associated with the authenticated user.
@@ -27,7 +28,7 @@ class ApiKey(View):
             'registered_at': api_key.registered_at
         } for api_key in api_keys if not api_key.is_deleted]}, 200
 
-    @jwt_required()
+    @authenticator()
     @arg_parser(optional_args={
         'name': api_key_name_regexp,
         'domains': api_key_domains_regexp
@@ -44,7 +45,7 @@ class ApiKey(View):
         ApiKeyDAO.create_api_key(user_uuid=get_jwt().get("sub"), key=name, domains=domains)
         return {'message': 'Api key created successfully!'}, 201
 
-    @jwt_required(fresh=True)
+    @authenticator(fresh=True)
     @arg_parser(
         required_args={
             'uuid': uuid4_regexp
@@ -79,7 +80,7 @@ class ApiKey(View):
 
         return {'message': 'Api key info updated!'}, 200
 
-    @jwt_required(fresh=True)
+    @authenticator(fresh=True)
     @math_captcha()
     @arg_parser(required_args={
         'uuid': uuid4_regexp

@@ -4,7 +4,7 @@ from flask import Blueprint, jsonify, Response
 from flask_jwt_extended import create_access_token, jwt_required, create_refresh_token, get_jwt_identity, get_jwt
 
 from app import bcrypt, redis_client, app
-from app.apis.utils import View, arg_parser, email_regexp, password_regexp, name_regexp
+from app.apis.utils import View, arg_parser, email_regexp, password_regexp, name_regexp, authenticator
 from app.database import UserDAO
 
 
@@ -63,7 +63,7 @@ class Auth(View):
         return {'message': 'Account created!'}, 201
 
     # Refreshes the user's access token by using the refresh token
-    @jwt_required(refresh=True)
+    @authenticator(refresh=True)
     def patch(self) -> _patch_type:
         """
         Refreshes the access token by verifying the refresh token.
@@ -75,7 +75,7 @@ class Auth(View):
         return jsonify(access_token=create_access_token(identity=get_jwt_identity()), fresh=False), 200
 
     # Revokes the user's current token
-    @jwt_required(verify_type=False)
+    @authenticator(verify_type=False)
     def delete(self) -> _delete_type:
         """
         Revokes the user's current token (either access or refresh).
