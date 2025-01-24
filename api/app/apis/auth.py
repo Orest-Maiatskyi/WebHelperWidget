@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from typing import Tuple, Dict
 
 from flask import Blueprint, jsonify, Response
@@ -30,10 +31,28 @@ class Auth(View):
         """
         user = UserDAO.get_user_by_email(email)
         if user is None or not bcrypt.check_password_hash(user.password, password):
-            # Return error if email or password is incorrect
-            return {'error': 'Unauthorized', 'message': 'Email or password is incorrect!'}, 401
+            return {'error': 'Unauthorized', 'message': 'Email or password is incorrect'}, 401
 
-        # Return success with JWT tokens if login is successful
+        if not user.email_verified:
+            return jsonify({'error': 'Forbidden', 'message': 'Email address not verified'}), 403
+
+        if user.is_deleted:
+            return jsonify({'error': 'Gone', 'message': 'Account was deleted'}), 410
+
+        if user.is_blocked:
+            if user.blocked_until.replace(tzinfo=timezone.utc) > datetime.now(timezone.utc):
+                return jsonify({
+                    'error': 'Locked',
+                    'message': 'Account blocked',
+                    'blocked_until': user.blocked_until,
+                    'block_reason': user.blocked_reason
+                }), 423
+            else:
+                user.is_blocked = False
+                user.blocked_reason = None
+                user.blocked_until = None
+                UserDAO.commit()
+
         return jsonify(message='Successful login',
                        access_token=create_access_token(identity=user.uuid, fresh=True),
                        refresh_token=create_refresh_token(identity=user.uuid)), 200
