@@ -5,9 +5,10 @@ from sqlalchemy import Integer, String, Boolean, DateTime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app import db
+from app.database.utils import SerializableMixin
 
 
-class User(db.Model):
+class User(db.Model, SerializableMixin):
     __tablename__ = 'users'
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     uuid: Mapped[str] = mapped_column(String(36), unique=True, nullable=False, default=lambda: str(uuid.uuid4()))
