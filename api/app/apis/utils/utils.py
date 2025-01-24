@@ -205,9 +205,7 @@ def authenticator(
                     return jsonify({'error': 'Gone', 'message': 'Account was deleted'}), 410
 
                 if user.is_blocked:
-                    time_diff = datetime.fromisoformat(user.blocked_until) - datetime.now(timezone.utc)
-
-                    if time_diff.total_seconds() > 0:
+                    if user.blocked_until.replace(tzinfo=timezone.utc) > datetime.now(timezone.utc):
                         return jsonify({
                             'error': 'Locked',
                             'message': 'Account blocked',
@@ -217,6 +215,7 @@ def authenticator(
                     else:
                         user.is_blocked = False
                         user.blocked_reason = None
+                        user.blocked_until = None
                         UserDAO.commit()
 
             return func(*args, **kwargs)
