@@ -82,3 +82,8 @@ openai_file_id_regexp = r'^file-[a-zA-Z0-9]{22}$'
 """
 This regular expression that matches a openai file id.
 """
+
+mail_token_regexp = r'^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$'
+"""
+This regular expression for email tokens.
+"""
