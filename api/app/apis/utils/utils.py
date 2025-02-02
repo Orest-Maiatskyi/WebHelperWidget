@@ -80,23 +80,39 @@ class View:
 
 def arg_parser(required_args: Dict[str, str] | None = None,
                optional_args: Dict[str, str] | None = None,
+               one_of_all: Dict[str, str] | None = None,
                file_required: str | None = None) -> Callable:
     """
-    Decorator for smart request argument / file parsing and validation using regular expressions.
+    Decorator for smart request argument and file parsing with validation using regular expressions.
+
+    Validates query parameters and uploaded files based on the provided rules:
+    - Required arguments must be present and match the specified regex patterns.
+    - Optional arguments are validated if present but are not mandatory.
+    - 'one_of_all' enforces that exactly one argument from the given set must be provided.
+    - File validation checks for the required file type if specified.
 
     :param required_args: A dictionary of required argument names and their regex patterns.
     :param optional_args: A dictionary of optional argument names and their regex patterns.
-    :param file_required: A string with required file extension (WITHOUT DOT)
-    :return: A decorator function.
+    :param one_of_all: A dictionary where exactly one argument must be present and match its regex pattern.
+    :param file_required: A string indicating the required file extension (WITHOUT DOT).
+    :return: A decorator function that validates request parameters before passing them to the original function.
     """
 
     def decorator(func: Callable):
         @wraps(func)
         def wrapper(*args, **kwargs):
             """
-            Wrapper function that validates request arguments and passes validated arguments to the original function.
+            Wrapper function that performs validation on request arguments and files.
 
-            :return: JSON response with an error if validation fails, or the result of the original function.
+            - Validates required arguments strictly for presence and pattern matching.
+            - Checks optional arguments only if they are provided.
+            - Ensures that exactly one argument from 'one_of_all' is present and valid;
+              returns an error if none or multiple are provided.
+            - Validates the presence and format of the uploaded file if 'file_required' is set.
+
+            If any validation fails, returns a JSON error response with an appropriate HTTP status code.
+
+            :return: JSON error response if validation fails, otherwise the original function's response.
             """
             validated_args = {}
 
@@ -115,6 +131,25 @@ def arg_parser(required_args: Dict[str, str] | None = None,
                         return jsonify({'error': 'Bad Request',
                                         'message': f'Incorrect optional argument: {arg}'}), 400
                     validated_args[arg] = request.args.get(arg)
+
+            if one_of_all:
+                temp_arg: str | None = None
+                for arg, regex in one_of_all.items():
+                    if request.args.get(arg) is not None:
+                        if not re.compile(regex, re.UNICODE).fullmatch(
+                                request.args.get(arg)):
+                            return jsonify({'error': 'Bad Request',
+                                            'message': f'Incorrect optional argument: {arg}'}), 400
+                        if temp_arg is not None:
+                            return jsonify({'error': 'Bad Request',
+                                            'message': f'Only one of the following arguments must be specified:\n'
+                                                       f'{" ".join("".join(arg) for arg, regex in one_of_all.items())}'}), 400
+                        temp_arg = arg
+                if temp_arg is None:
+                    return jsonify({'error': 'Bad Request',
+                                    'message': f'At least one of the following arguments must be specified:\n'
+                                               f'{" ".join("".join(arg) for arg, regex in one_of_all.items())}'}), 400
+                validated_args[temp_arg] = request.args.get(temp_arg)
 
             if file_required:
                 if len(request.files) == 0:
