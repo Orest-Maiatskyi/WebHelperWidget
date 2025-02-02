@@ -1,4 +1,5 @@
 from .auth import auth_bp
+from .confirm_email import confirm_email_bp
 from .account import account_bp
 from .api_key import api_key_bp
 from .fine_tuning import fine_tuning_bp
