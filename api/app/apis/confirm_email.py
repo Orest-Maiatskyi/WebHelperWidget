@@ -1,6 +1,6 @@
 from flask import Blueprint, url_for, render_template_string
 
-from app import UserDAO
+from app import UserDAO, redis_client
 from app.apis.utils import View, arg_parser, email_regexp, generate_confirmation_token, send_html_email, \
     MailTokenAlreadyExists, mail_token_regexp, confirm_token, MailTokenIncorrectOrExpiredException, \
     confirm_email_template
@@ -60,6 +60,7 @@ class ConfirmEmail(View):
 
             user.email_verified = True
             UserDAO.commit()
+            redis_client.delete(f'{email}-confirmation-token')
             return {'message': 'Account email confirmed.'}, 200
 
 
