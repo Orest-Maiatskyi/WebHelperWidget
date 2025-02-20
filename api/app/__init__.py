@@ -1,3 +1,4 @@
+import os
 from flask import Flask, Blueprint
 
 from app.config import current_config
@@ -13,7 +14,9 @@ from app.database import *
 
 
 with app.app_context():
-    if app.config.get('DEBUG'):
+
+    # https://stackoverflow.com/a/9476701
+    if not app.config.get('DEBUG') or os.environ.get("WERKZEUG_RUN_MAIN") == "true":
         db.drop_all()
         db.create_all()
         UserDAO.create_user('Jon', 'Don', 'jon_don@gamil.com',
