@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from typing import Tuple, Dict
 
 from flask import Blueprint, jsonify, Response
-from flask_jwt_extended import create_access_token, jwt_required, create_refresh_token, get_jwt_identity, get_jwt
+from flask_jwt_extended import create_access_token, create_refresh_token, get_jwt_identity, get_jwt, decode_token
 
 from app import bcrypt, redis_client, app
 from app.apis.utils import View, arg_parser, email_regexp, password_regexp, name_regexp, authenticator
@@ -53,9 +53,14 @@ class Auth(View):
                 user.blocked_until = None
                 UserDAO.commit()
 
+        refresh_token = create_refresh_token(identity=user.uuid)
+
         return jsonify(message='Successful login',
-                       access_token=create_access_token(identity=user.uuid, fresh=True),
-                       refresh_token=create_refresh_token(identity=user.uuid)), 200
+                       access_token=create_access_token(
+                           identity=user.uuid,
+                           fresh=True,
+                           additional_claims={'refresh_jti': decode_token(refresh_token)['jti']}),
+                       refresh_token=refresh_token), 200
 
     # Handles user registration by creating a new account
     @arg_parser({'first_name': name_regexp,
@@ -90,11 +95,13 @@ class Auth(View):
 
         :return: JSON response with the new access token and status, and HTTP status code
         """
-        redis_client.set(get_jwt()["jti"], "refreshed", ex=app.config.get('JWT_ACCESS_TOKEN_EXPIRES'))
-        return jsonify(access_token=create_access_token(identity=get_jwt_identity()), fresh=False), 200
+        return jsonify(access_token=create_access_token(
+            identity=get_jwt_identity(),
+            fresh=False,
+            additional_claims={'refresh_jti': get_jwt()['jti']})), 200
 
     # Revokes the user's current token
-    @authenticator(verify_type=False)
+    @authenticator(refresh=False)
     def delete(self) -> _delete_type:
         """
         Revokes the user's current token (either access or refresh).
@@ -102,9 +109,11 @@ class Auth(View):
 
         :return: JSON response with the revocation message and HTTP status code
         """
-        redis_client.set(get_jwt()["jti"], f'{get_jwt()["type"]} revoked',
+        redis_client.set(get_jwt()["jti"], 'access token revoked',
                          ex=app.config.get('JWT_ACCESS_TOKEN_EXPIRES'))
-        return {'message': f'{get_jwt()["type"].capitalize()} token successfully revoked'}, 200
+        redis_client.set(get_jwt()["refresh_jti"], 'refresh token revoked',
+                         ex=app.config.get('JWT_REFRESH_TOKEN_EXPIRES'))
+        return {'message': f'Tokens successfully revoked'}, 200
 
 
 auth_bp.add_url_rule('/', view_func=Auth.as_view('auth'))
