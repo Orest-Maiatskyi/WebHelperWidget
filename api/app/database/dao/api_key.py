@@ -1,5 +1,7 @@
 from datetime import datetime
 
+from sqlalchemy import and_
+
 from app import db
 from app.database.dao.base import Base
 from app.database.models import ApiKeyModel, FineTuningModel
@@ -34,4 +36,5 @@ class ApiKey(Base):
 
     @staticmethod
     def get_all_api_keys_by_user_uuid(user_uuid: str) -> list[ApiKeyModel]:
-        return ApiKey.scalars_query(ApiKeyModel.query.where(ApiKeyModel.user_uuid == user_uuid))
+        return ApiKey.scalars_query(ApiKeyModel.query.where(
+            and_(ApiKeyModel.user_uuid == user_uuid, ApiKeyModel.is_deleted.is_(False))))
