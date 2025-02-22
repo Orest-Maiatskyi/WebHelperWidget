@@ -104,7 +104,7 @@ class ApiKey(View):
         api_key.deleted_at = datetime.now()
         ApiKeyDAO.commit()
 
-        return {'message': 'Account deleted successfully!'}, 200
+        return {'message': 'Api key deleted successfully!'}, 200
 
 
 api_key_bp.add_url_rule('/', view_func=ApiKey.as_view('api_key'))
