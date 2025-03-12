@@ -13,7 +13,7 @@ _get_post_type = tuple[dict[str, str], int] | tuple[Response, int]
 _patch_type = tuple[Response, int]
 _delete_type = Tuple[Dict[str, str], int]
 
-auth_bp = Blueprint('auth', __name__)
+header_auth_bp = Blueprint('auth', __name__)
 
 
 class Auth(View):
@@ -116,4 +116,4 @@ class Auth(View):
         return {'message': f'Tokens successfully revoked'}, 200
 
 
-auth_bp.add_url_rule('/', view_func=Auth.as_view('auth'))
+header_auth_bp.add_url_rule('/', view_func=Auth.as_view('auth'))
